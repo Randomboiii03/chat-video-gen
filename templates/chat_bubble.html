@@ -1,0 +1,21 @@
+{% macro chat_bubble(message, user=None, is_sender=True) %}
+    {% if is_sender %}
+        <div class="flex flex-row justify-end">
+            <div class="w-fit rounded-2xl m-2 px-3 py-1 text-white bg-purple-500 max-w-[275px]">
+                <span>{{ message | safe }}</span>
+            </div>
+        </div>
+    {% else %}
+        <div class="w-fit m-2">
+            <div class="flex flex-row items-end gap-2">
+                <img src="{{ url_for('static', filename='image/avatar.jpg') }}" alt="avatar" class="w-7 h-7 rounded-full object-cover">
+                <div>
+                    <p class="text-xs ml-3 mb-1 text-gray-600">{{ user }}</p>
+                    <div class="rounded-2xl px-3 py-1 bg-white max-w-[275px]">
+                        <span>{{ message | safe }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endmacro %}

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% import "navbar.html" as navbar %}
+{% import "chat_bubble.html" as chat %}
+
+{% block title %}Chat Page{% endblock %}
+
+{% block content %}
+    <div id="chatContainer" class="flex flex-col justify-center items-center grow p-6 gap-3 w-full">
+        <div class="h-[640px] w-[360px]">
+            <!-- Top -->
+            {{ navbar.navbar(json_data['receiver']) }}
+
+            <div class="flex flex-col justify-end bg-gray-200 h-[500px]">
+                <div id="messageContainer" class="flex flex-col p-2 bg-gray-200 h-full overflow-y-scroll space-y-2 opacity-0">
+                    {% for message in json_data['conversation'] %}
+                        <div class="message-bubble hidden">
+                            {% if message.type == "sender" %}
+                                <div class="flex justify-end">
+                                    {{ chat.chat_bubble(message.message, is_sender=True) }}
+                                </div>
+                            {% else %}
+                                <div class="flex justify-start">
+                                    {{ chat.chat_bubble(message.message, json_data["receiver"], is_sender=False) }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Bottom -->
+            {% include "footer.html" %}
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const messageContainer = document.getElementById('messageContainer');
+            const messages = messageContainer.querySelectorAll('.message-bubble');
+
+            let delay = 1000;  // Adjust delay time (in milliseconds)
+
+            messageContainer.classList.remove('opacity-0');  // Show container
+
+            // Create a canvas and video element for screen capture
+            const canvas = document.createElement('canvas');
+            const video = document.createElement('video');
+            const stream = canvas.captureStream(30);  // Capture at 30 FPS
+            const recorder = new MediaRecorder(stream);
+
+            const chunks = [];
+            
+            recorder.ondataavailable = function(event) {
+                chunks.push(event.data);
+            };
+
+            recorder.onstop = function() {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const videoURL = URL.createObjectURL(blob);
+                console.log("Generated video URL:", videoURL);  // Check the video URL in the console
+                video.src = videoURL; // Set the blob URL as the source for the video
+                video.controls = true;  // Add controls to the video for playback
+
+                // Append the video to the document
+                document.body.appendChild(video);
+
+                // OPTIONAL: Create a download link for the recorded video
+                const link = document.createElement('a');
+                link.href = videoURL;
+                link.download = 'captured-video.webm';  // Set filename for the video
+                link.textContent = 'Download recorded video';
+
+                // Append the download link
+                document.body.appendChild(link);
+            };
+
+            // Start recording
+            recorder.start();
+
+            // Animate messages with delays
+            messages.forEach((message, index) => {
+                setTimeout(() => {
+                    message.classList.remove('hidden');
+                    message.classList.add('animate-pop-up', 'opacity-100', 'transition', 'ease-in', 'duration-500');
+                    scrollToBottom();  // Scroll to bottom when the message appears
+                }, delay * (index + 1));  // Increment delay for each message
+            });
+
+            function scrollToBottom() {
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+            }
+
+            // Stop recording after all messages have been shown (or set a timeout)
+            setTimeout(() => {
+                recorder.stop();  // Stop recording after the last message
+            }, delay * (messages.length + 1));  // Adjust to ensure all messages are recorded
+        });
+    </script>
+{% endblock %}
